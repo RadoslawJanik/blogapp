@@ -1,9 +1,10 @@
-from django.shortcuts import render
-from app.forms import CommentForm, SubscribeForm
+from django.shortcuts import render, redirect
+from app.forms import CommentForm, NewUserForm, SubscribeForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.db.models import Count
+from django.contrib.auth import login
 
 from app.models import Comments, Post, Profile, Tag, WebsiteMeta
 
@@ -15,10 +16,10 @@ def index(request):
     featured_blog = Post.objects.filter(is_featured = True)
     subscribe_form = SubscribeForm()
     subscribe_successful = None
-    wesite_info = None
+    website_info = None
 
     if WebsiteMeta.objects.all().exists():
-        wesite_info = WebsiteMeta.objects.all()[0]
+        website_info = WebsiteMeta.objects.all()[0]
 
     if featured_blog:
         featured_blog = featured_blog[0]
@@ -27,10 +28,11 @@ def index(request):
         subscribe_form = SubscribeForm(request.POST)
         if subscribe_form.is_valid():
             subscribe_form.save()
+            request.session['subscribed'] = True
             subscribe_successful = 'Subscribed Successfully'
             subscribe_form = SubscribeForm()
 
-    context = {'posts':posts, 'top_posts':top_posts,'website_info':wesite_info, 'recent_posts':recent_posts, 'subscribe_form':subscribe_form, 'subscribe_successful':subscribe_successful, 'featured_blog':featured_blog}
+    context = {'posts':posts, 'top_posts':top_posts, 'website_info':website_info,'recent_posts':recent_posts, 'subscribe_form':subscribe_form, 'subscribe_successful':subscribe_successful, 'featured_blog':featured_blog}
     return render(request, 'app/index.html', context)
 
 def post_page(request, slug):
@@ -79,8 +81,6 @@ def tag_page(request, slug):
     context={'tag':tag,'top_posts':top_posts, 'recent_posts':recent_posts, 'tags':tags}
     return render(request, 'app/tag.html', context)
 
-
-
 def author_page(request, slug):
     profile = Profile.objects.get(slug=slug)
 
@@ -91,8 +91,6 @@ def author_page(request, slug):
     context={'profile':profile,'top_posts':top_posts, 'recent_posts':recent_posts, 'top_authors':top_authors}
     return render(request, 'app/author.html', context)
 
-
-
 def search_posts(request):
     search_query=''
     if request.GET.get('q'):
@@ -102,7 +100,6 @@ def search_posts(request):
     context={'posts':posts, 'search_query':search_query}
     return render(request, 'app/search.html', context)
 
-
 def about(request):
     website_info = None
 
@@ -111,3 +108,15 @@ def about(request):
 
     context={'website_info':website_info}
     return render(request, 'app/about.html', context)
+
+
+def register_user(request):
+    form = NewUserForm()
+    if request.method == "POST":
+        form = NewUserForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect("/")
+    context={'form':form}
+    return render(request, 'registration/registration.html', context)

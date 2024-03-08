@@ -12,9 +12,9 @@
           </div>
           <div class="typo">
             {% if website_info.title %}
-            <h1 class="title">{{website_info.title}}</h1>
+              <h1 class="title">{{website_info.title}}</h1>
             {% else %}
-            <h1 class="title">Webstire blog title</h1>
+              <h1 class="title">Website blog title</h1>
             {% endif %}
 
             {% if website_info.description %}
@@ -29,11 +29,13 @@
             {% endif %}
           </div>
           <div class="newsletter">
+            {% if request.session.subscribed == None %}
             <form method="POST">
               {% csrf_token %}
               {{subscribe_form}}
               <button class="btn btn-primary">Subscribe</button>
             </form>
+            {% endif %}
             {% if subscribe_successful %}
             <br><p>Subscribed Successfully</p>
             {% endif %}
